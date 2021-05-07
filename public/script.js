@@ -30,10 +30,18 @@ async function dataHandler(mapObjectFromFunction) {
     const searchToJSON = await request_search.json();
     const search_data = searchToJSON.data;
     // Remove current markers here
+    mapObjectFromFunction.eachLayer(function (layer) {
+    if(layer.options.tileSize != 512) {
+        mapObjectFromFunction.removeLayer(layer);
+    }
+    });
+    
     for(i=0;i<search_data.length;i++) {
       const marker = L.marker([search_data[i].location.lat,search_data[i].location.long]).addTo(mapObjectFromFunction);
+      const editBtn = L.DomUtil.create('a', 'edit');
+      editBtn.innerHTML = '<a href="#manageForm">Edit</a>';
       marker.bindPopup('<b>Call ID: </b>' + search_data[i].call.call_id + '<br>' + '<b>Call Type: </b>' + search_data[i].call.call_type + 
-      '<br>' + '<b>Call Class: </b>' + search_data[i].call.call_class + '<br>' + '<b>Call Time: </b>' + search_data[i].call.call_time).openPopup();
+      '<br>' + '<b>Call Class: </b>' + search_data[i].call.call_class + '<br>' + '<b>Call Time: </b>' + search_data[i].call.call_time + '<br>'+ editBtn.innerHTML).openPopup();
     }
   });
 }
@@ -49,8 +57,19 @@ async function markMap(mapObjectFromFunction) {
 
   for(j = 0; j < 100; j++) {
     const marker = L.marker([locations[j].lat, locations[j].long]).addTo(mapObjectFromFunction);
-    marker.bindPopup('<b>Call ID: </b>' + calls[j].call_id + '<br>' + '<b>Call Type: </b>' + calls[j].call_type + 
-                    '<br>' + '<b>Call Class: </b>' + calls[j].call_class + '<br>' + '<b>Call Time: </b>' + calls[j].call_time).openPopup();
+    const latlng = L.latLng(locations[j].lat, locations[j].long);
+    const editBtn = L.DomUtil.create('a', 'edit');
+    editBtn.innerHTML = '<a href="#manageForm">Edit</a>';     
+    const popup = L.popup()
+                  .setLatLng(latlng)
+                  .setContent('<b>Call ID: </b>' + calls[j].call_id + '<br>' + '<b>Call Type: </b>' + calls[j].call_type + 
+                  '<br>' + '<b>Call Class: </b>' + calls[j].call_class + '<br>' + '<b>Call Time: </b>' + calls[j].call_time
+                  + '<br>' + editBtn.innerHTML)
+                  .openOn(mapObjectFromFunction);
+
+    console.log('Edit value', editBtn);
+    L.DomEvent.on(editBtn, 'click', function() { alert('works'); });
+    marker.bindPopup(popup).openPopup();
   }
   
 }
@@ -58,7 +77,7 @@ async function markMap(mapObjectFromFunction) {
 async function windowActions() {
   const map = mapInit();
   await dataHandler(map);  
-  await markMap(map);
+  await markMap(map); 
 }
 
 window.onload = windowActions;
